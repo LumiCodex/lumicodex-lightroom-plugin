@@ -304,6 +304,7 @@ function Provider.processRenderedPhotos(functionContext, exportContext)
             end
             if encodedPath then LrFileUtils.delete(encodedPath) end
         else
+            rendition:uploadFailed(tostring(renderedPath))
             failures[#failures + 1] = tostring(renderedPath)
         end
         completed = completed + 1

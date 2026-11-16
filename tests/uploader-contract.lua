@@ -36,6 +36,22 @@ local context, failed = Host.context(settings, { temp .. "/one's $&% 📷.jpg", 
 Provider.processRenderedPhotos({}, context)
 assert(not failed[1] and failed[2] and not failed[3], "A failed photo must not prevent later uploads")
 
+local renderFailed
+context = Host.context(settings, {})
+context.renditions = function()
+    local sent = false
+    return function()
+        if sent then return end
+        sent = true
+        return 1, {
+            waitForRender = function() return false, "Fixture rendering failure" end,
+            uploadFailed = function(_, message) renderFailed = message end,
+        }
+    end
+end
+Provider.processRenderedPhotos({}, context)
+assert(renderFailed == "Fixture rendering failure", "Render errors must mark renditions failed")
+
 settings.LC_apiKey = "invalid-fixture-key"
 context, failed = Host.context(settings, { temp .. "/three.jpg" })
 Provider.processRenderedPhotos({}, context)
