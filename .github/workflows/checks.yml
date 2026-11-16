@@ -1,0 +1,33 @@
+name: Check plugin
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua 5.1
+        run: sudo apt-get update && sudo apt-get install -y lua5.1
+      - name: Check Lua and shell syntax
+        run: |
+          luac5.1 -p LumiCodex.lrplugin/*.lua tests/*.lua
+          bash -n scripts/*.sh
+      - name: Download supported uploader
+        run: |
+          mkdir -p "$RUNNER_TEMP/uploader"
+          curl -fL https://github.com/LumiCodex/lumicodex-mcp-plugin/releases/download/v1.2.0/lumicodex-upload-linux-x64.tar.gz -o "$RUNNER_TEMP/uploader.tar.gz"
+          tar -xzf "$RUNNER_TEMP/uploader.tar.gz" -C "$RUNNER_TEMP/uploader"
+      - name: Exercise plugin with the real uploader
+        run: python3 tests/check.py --lua lua5.1 --uploader "$RUNNER_TEMP/uploader/lumicodex-upload"
+      - name: Package plugin
+        run: ./scripts/package.sh 1.0.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumicodex-lightroom-plugin
+          path: dist/lumicodex-lightroom-plugin-1.0.0.zip
